@@ -1,0 +1,102 @@
+clc;
+fm=100;     %signal frequency 
+fc=500;     %carrier frequency
+fs=5000;    %sampling frequency
+Am=1;
+A=2;
+N=512;
+K=N-1;
+n=0:N-1;
+t=(0:1/fs:K/fs);
+
+yt=Am*cos(2*pi*fm*t);
+%{
+figure(1)
+subplot(1,1,1);plot(t,yt);title('100Hz signal in time domain');
+fyt = fft(yt,N);
+q1=(0:N/2-1)*fs/N;
+mx1=abs(fyt(1:N/2));
+figure(7)
+plot(q1,mx1);
+title('100 Hz signal in frequency domain');
+w1=sum(yt.^2)/fs;
+%}
+
+y0=A+yt;
+y2=y0.*cos(2*pi*fc*n/fs);
+y3=fft(y2,N);
+q1=(0:N/2-1)*fs/N;
+mx1=abs(y3(1:N/2));
+figure(1)
+%subplot(2,1,1);
+plot(t,y2);
+title('modulated signal in time domain');
+
+
+subplot(2,1,2);
+plot(q1,mx1);
+title('modulated signal in frequency domain(dual)');
+
+
+yc=cos(2*pi*fc*t);
+figure(2);
+plot(t,yc),title('carrier signal in time domain(dual)')
+
+
+n=0:N-1;
+yc1 = Am*cos(2*pi*fc*n/fs);
+y3=fft(yc1,N);
+q=(0:N/2-1)*fs/N;
+mx=abs(y3(1:N/2));
+figure(1)
+plot(q,mx),title('carrier signal in frequency domain(dual)')
+
+N=512;
+n=0:N-1;
+y4=0.5*gngauss(0, 1, length(t));%y4=0.01*randn(1,length(t)); %guassian noise 
+w2=y4.^2;                    %noise power
+w3=sum(w2);
+w1/w3
+figure(4);
+subplot(2,1,1);
+plot(t,y4);
+title('guassian noise in time domain');
+y5=fft(y4,N);
+q2=(0:N/2-1)*fs/N;
+mx2=abs(y5(1:N/2));
+figure(4);
+subplot(2,1,2);
+plot(q2,mx2);
+title('guassian noise in frequency domain');
+y6=y2+y4;
+figure(5);
+subplot(2,1,1);
+plot(t,y6);
+title('noise added signal in time domain')
+q3=q1;
+mx3=mx1+mx2;
+subplot(2,1,2);
+plot(q3,mx3);
+title('noise added signal in frequency domain')
+
+
+yv=y6.*yc;   %multiply the carrier to demodulate the signal
+Ws=yv.^2;
+p1=fc-fm;
+[k,Wn,beta,ftype]=kaiserord([p1 fc],[1 0],[0.05 0.01],fs);%low pass filter
+window=kaiser(k+1,beta);%use kaiser windows function
+b=fir1(k,Wn,ftype,window,'noscale');%
+yt1=filter(b,1,yv);
+yssdb=yt1.*2-2;
+figure(6)
+subplot(2,1,1);
+plot(t,yssdb);
+title('demodulated signal in time domain')    ;%demodulation
+err = sum(abs(yssdb - yt))/length(t)
+y9=fft(yssdb,N);
+mx=abs(y9(1:N/2));
+subplot(2,1,2);
+plot(q,mx);
+title('demodulated signal in frequency domain')
+%}
+%close all
